@@ -1,7 +1,7 @@
 import tkinter as tk
 import subprocess
 from tkinter import filedialog
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageEnhance, ImageFilter
 
 # Create a function to open the file dialog and select an image file
 def select_image():
