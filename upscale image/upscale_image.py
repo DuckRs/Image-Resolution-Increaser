@@ -1,45 +1,47 @@
 import tkinter as tk
-import subprocess
-from tkinter import filedialog
-from PIL import Image, ImageEnhance
+from tkinter import filedialog, messagebox
+from PIL import Image, ImageFilter, ImageEnhance
+import os
 
-# Create a function to open the file dialog and select an image file
-def select_image():
-    # Open the file dialog and get the selected file's path
-    file_path = filedialog.askopenfilename()
+class ImageResizer(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Image Resizer")
+        self.geometry("300x150")
+        self.resizable(False, False)
 
-    # Open the image and get its width and height
-    im = Image.open(file_path)
-    width, height = im.size
+        self.select_button = tk.Button(self, text="Select Image", command=self.select_image)
+        self.select_button.pack(pady=20)
 
-    # Calculate the new width and height to increase the resolution by a factor of 4
-    new_width = width * 4
-    new_height = height * 4
+        self.status_label = tk.Label(self, text="")
+        self.status_label.pack()
 
-    # Denoise the image using the median filter
-    im_denoised = im.filter(ImageFilter.MedianFilter(size=3))
+    def select_image(self):
+        file_path = filedialog.askopenfilename(title="Select Image", filetypes=[("Image Files", "*.jpg;*.png;*.bmp")])
+        if file_path:
+            try:
+                self.process_image(file_path)
+                messagebox.showinfo("Success", "Image resized successfully!")
+            except Exception as e:
+                messagebox.showerror("Error", str(e))
 
-    # Sharpen the image using the unsharp mask filter
-    im_sharpened = im_denoised.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
+    def process_image(self, file_path):
+        im = Image.open(file_path)
+        width, height = im.size
 
-    # Correct the color balance using the color balance filter
-    im_corrected = ImageEnhance.Color(im_sharpened).enhance(1.5)
+        new_width = width * 4
+        new_height = height * 4
 
-    # Use the resize() method to increase the resolution
-    im_resized = im_corrected.resize((new_width, new_height), resample=Image.BICUBIC)
+        im_denoised = im.filter(ImageFilter.MedianFilter(size=3))
+        im_sharpened = im_denoised.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
+        im_corrected = ImageEnhance.Color(im_sharpened).enhance(1.5)
+        im_resized = im_corrected.resize((new_width, new_height), resample=Image.BICUBIC)
 
-    # Save the resized image
-    im_resized.save('image_4k.jpg')
+        output_path = os.path.splitext(file_path)[0] + "_4k" + os.path.splitext(file_path)[1]
+        im_resized.save(output_path)
 
-    # Open the output image using the default image viewer
-    subprocess.run(['open', 'image_4k.jpg'])
+        self.status_label.config(text=f"Image saved as: {output_path}")
 
-# Create the GUI
-root = tk.Tk()
-root.title("Image Resizer")
-
-# Create a button to open the file dialog
-button = tk.Button(text="Select image", command=select_image)
-button.pack()
-
-root.mainloop()
+if __name__ == "__main__":
+    app = ImageResizer()
+    app.mainloop()
